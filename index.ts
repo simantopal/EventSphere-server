@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import bcrypt from "bcrypt";
-import { MongoClient, ServerApiVersion } from "mongodb";
+import { MongoClient, ObjectId, ServerApiVersion } from "mongodb";
 
 dotenv.config();
 
@@ -27,6 +27,7 @@ const db = client.db("EventSphere");
 // Collections
 const usersCollection = db.collection("users");
 const eventsCollection = db.collection("events");
+const bookingsCollection = db.collection("bookings");
 
 // MongoDB Connect
 async function connectDB() {
@@ -74,4 +75,154 @@ app.post("/register", async (req, res) => {
     message: "User Registered Successfully",
     result,
   });
+});
+
+app.post("/events", async (req, res) => {
+  try {
+    const result = await eventsCollection.insertOne(req.body);
+
+    res.status(201).json({
+      success: true,
+      insertedId: result.insertedId,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to add event",
+    });
+  }
+});
+
+app.get("/events", async (req, res) => {
+  try {
+    const events = await eventsCollection
+      .find()
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    res.status(200).json({
+      success: true,
+      data: events,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch events",
+    });
+  }
+});
+
+app.get("/events/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const event = await eventsCollection.findOne({
+      _id: new ObjectId(id),
+    });
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: event,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+    });
+  }
+});
+
+app.get("/manage", async (req, res) => {
+  try {
+    const email = req.query.email as string;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const events = await eventsCollection
+      .find({
+        "createdBy.email": email,
+      })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    res.status(200).json({
+      success: true,
+      data: events,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch events",
+    });
+  }
+});
+
+app.delete("/events/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await eventsCollection.deleteOne({
+      _id: new ObjectId(id),
+    });
+
+    res.status(200).json({
+      success: true,
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete event",
+    });
+  }
+});
+
+app.post("/bookings", async (req, res) => {
+  try {
+    const bookingData = req.body;
+
+    const totalPrice = bookingData.tickets * bookingData.price;
+
+    const booking = {
+      ...bookingData,
+      totalPrice,
+      bookedAt: new Date(),
+    };
+
+    const result = await bookingsCollection.insertOne(booking);
+
+    res.send({
+      success: true,
+      message: "Ticket booked successfully",
+      data: result,
+    });
+
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).send({
+      success: false,
+      message: "Failed to book ticket",
+    });
+  }
 });
