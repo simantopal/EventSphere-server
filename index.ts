@@ -226,3 +226,56 @@ app.post("/bookings", async (req, res) => {
     });
   }
 });
+
+app.get("/bookings", async (req, res) => {
+  try {
+    const email = req.query.email as string;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const bookings = await bookingsCollection
+      .find({ email })
+      .sort({ bookedAt: -1 })
+      .toArray();
+
+    res.status(200).json({
+      success: true,
+      data: bookings,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch bookings",
+    });
+  }
+});
+
+app.delete("/bookings/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await bookingsCollection.deleteOne({
+      _id: new ObjectId(id),
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Booking cancelled successfully",
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to cancel booking",
+    });
+  }
+});
