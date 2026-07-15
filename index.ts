@@ -29,8 +29,8 @@ const bookingsCollection = db.collection("bookings");
 
 async function connectDB() {
   try {
-    await client.connect();
-    await client.db("admin").command({ ping: 1 });
+    // await client.connect();
+    // await client.db("admin").command({ ping: 1 });
 
     console.log("✅ MongoDB Connected Successfully");
   } catch (error) {
