@@ -21,15 +21,12 @@ const client = new MongoClient(process.env.MONGO_DB_URI!, {
   },
 });
 
-// Database
 const db = client.db("EventSphere");
 
-// Collections
 const usersCollection = db.collection("users");
 const eventsCollection = db.collection("events");
 const bookingsCollection = db.collection("bookings");
 
-// MongoDB Connect
 async function connectDB() {
   try {
     await client.connect();
@@ -43,7 +40,6 @@ async function connectDB() {
 
 connectDB();
 
-// Test Route
 app.get("/", (req, res) => {
   res.send("Server Running");
 });
